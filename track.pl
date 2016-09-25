@@ -5,6 +5,7 @@ use Mojo::Pg;
 plugin Config => {
   defaults => {
     pg => 'postgresql://user:pass@/track',
+    google_api_key => 'your-google-api-key',
   },
 };
 
@@ -42,9 +43,61 @@ post '/' => sub {
   $c->render(json => []);
 };
 
+get '/' => 'map';
+
 app->start;
 
 __DATA__
+
+@@ map.html.ep
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map, bounds;
+      var myLatLng   = {lat: -25.363, lng: 131.044};
+      var yourLatLng = {lat: -25.463, lng: 131.144};
+
+      function addMarker(pos, title) {
+        if (!map) return;
+        var marker = new google.maps.Marker({
+          map: map,
+          position: pos,
+          'title': title,
+        });
+        bounds.extend(pos);
+        map.fitBounds(bounds);
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {});
+        bounds = new google.maps.LatLngBounds();
+
+        addMarker(myLatLng, 'Me');
+        addMarker(yourLatLng, 'You');
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<%== $c->app->config->{google_api_key}  %>&callback=initMap"
+    async defer></script>
+  </body>
+</html>
 
 @@ migrations
 
