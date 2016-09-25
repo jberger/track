@@ -71,29 +71,40 @@ __DATA__
   <body>
     <div id="map"></div>
     <script>
-      var map, bounds;
+      var map;
       var myLatLng   = {lat: -25.363, lng: 131.044};
       var yourLatLng = {lat: -25.463, lng: 131.144};
+      var markers = [];
 
       function addMarker(pos, title) {
         if (!map) return;
         var marker = new google.maps.Marker({
           map: map,
           position: pos,
+          label: title,
           'title': title,
         });
-        bounds.extend(pos);
+        markers.push(marker);
+        return marker;
+      }
+
+      function fitBounds() {
+        var bounds = new google.maps.LatLngBounds();
+        _.each(markers, function(marker) {
+          bounds.extend(marker.getPosition());
+        });
         map.fitBounds(bounds);
       }
 
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {});
-        bounds = new google.maps.LatLngBounds();
 
         addMarker(myLatLng, 'Me');
         addMarker(yourLatLng, 'You');
+        fitBounds();
       }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.1/lodash.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=<%== $c->app->config->{google_api_key}  %>&callback=initMap"
     async defer></script>
   </body>
