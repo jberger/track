@@ -7,7 +7,7 @@
     </div>
     <div class="media-body">
       <h4 class="media-heading">{{ user.name }}</h4>
-      Located at {{ user.location.lat }}, {{user.location.lon }}
+      <span v-if="user.location">Located at {{ user.location.lat }}, {{ user.location.lon }}</span>
     </div>
     <div class="media-right media-middle">
       <span>
