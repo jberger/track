@@ -57,6 +57,24 @@ helper authenticate => sub {
   return $user;
 };
 
+helper path => sub {
+  my ($c, $user) = @_;
+  my $sql = <<'  SQL';
+    select json_agg(row_to_json(t)) as path
+    from (
+      select
+        (data->>'lat')::numeric as lat,
+        (data->>'lon')::numeric as lng
+      from data
+      where
+        user_id=?
+        and type='location'
+      order by sent
+    ) t;
+  SQL
+  return $c->pg->db->query($sql, $user->{id})->expand->hash->{path};
+};
+
 any [qw/GET POST/] => '/login' => sub {
   my $c = shift;
   my $username = $c->param('username');
@@ -118,7 +136,7 @@ __DATA__
       <h2><%= title %></h2>
       <form method="POST" action="/login">
         <div class="form-group">
-          <label for="username">Email address</label>
+          <label for="username">Username</label>
           <input type="text" class="form-control" id="username" name="username" placeholder="Username">
         </div>
         <div class="form-group">
@@ -157,8 +175,22 @@ __DATA__
       % my $user = get_user;
       var user = <%== Mojo::JSON::to_json $user %>;
       var loc = <%== Mojo::JSON::to_json get_user_location $user %>;
+      var path = <%== Mojo::JSON::to_json path $user %>;
       var myLatLng = {lat: loc.lat, lng: loc.lon};
       var markers = [];
+
+      function addPath(path) {
+        var pathLine = new google.maps.Polyline({
+          'path': path,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+
+        pathLine.setMap(map);
+        fitBounds(path);
+      }
 
       function addMarker(pos, title) {
         if (!map) return;
@@ -172,10 +204,11 @@ __DATA__
         return marker;
       }
 
-      function fitBounds() {
+      function fitBounds(points) {
         var bounds = new google.maps.LatLngBounds();
-        _.each(markers, function(marker) {
-          bounds.extend(marker.getPosition());
+        _.each(points, function(point) {
+          if ('getPosition' in point) point = point.getPosition();
+          bounds.extend(point);
         });
         map.fitBounds(bounds);
       }
@@ -184,7 +217,7 @@ __DATA__
         map = new google.maps.Map(document.getElementById('map'), {});
 
         addMarker(myLatLng, loc.tid);
-        fitBounds();
+        fitBounds(markers);
       }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.1/lodash.min.js"></script>
