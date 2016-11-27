@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map;
+      % my $user = get_user;
+      var user = <%== Mojo::JSON::to_json $user %>;
+      var loc = <%== Mojo::JSON::to_json get_user_location $user %>;
+      var path = <%== Mojo::JSON::to_json path $user %>;
+      var myLatLng = {lat: loc.lat, lng: loc.lon};
+      var markers = [];
+
+      function addPath(path) {
+        var pathLine = new google.maps.Polyline({
+          'path': path,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+
+        pathLine.setMap(map);
+        fitBounds(path);
+      }
+
+      function addMarker(pos, title) {
+        if (!map) return;
+        var marker = new google.maps.Marker({
+          map: map,
+          position: pos,
+          label: title,
+          'title': title,
+        });
+        markers.push(marker);
+        return marker;
+      }
+
+      function fitBounds(points) {
+        var bounds = new google.maps.LatLngBounds();
+        _.each(points, function(point) {
+          if ('getPosition' in point) point = point.getPosition();
+          bounds.extend(point);
+        });
+        map.fitBounds(bounds);
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {});
+
+        addMarker(myLatLng, loc.tid);
+        fitBounds(markers);
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.1/lodash.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<%== $c->app->config->{google_api_key}  %>&callback=initMap"
+    async defer></script>
+  </body>
+</html>
+

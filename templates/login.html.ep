@@ -1,0 +1,26 @@
+% title 'Please log in';
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    %= stylesheet 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
+  </head>
+  <body>
+    <div class="container">
+      <h2><%= title %></h2>
+      <form method="POST" action="/login">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" class="form-control" id="username" name="username" placeholder="Username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>
+
