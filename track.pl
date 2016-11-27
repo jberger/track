@@ -82,51 +82,52 @@ helper path => sub {
   return $c->pg->db->query($sql, $user->{id})->expand->hash->{path};
 };
 
-any [qw/GET POST/] => '/login' => sub {
+my $r = app->routes;
+$r->any([qw/GET POST/] => '/login' => sub {
   my $c = shift;
   my $username = $c->param('username');
   return $c->render('login') if $c->req->method eq 'GET' || !$username;
   return $c->render('login') unless my $user = $c->authenticate($username, $c->param('password'));
   $c->session(username => $username);
-  $c->redirect_to('map');
-};
+  $c->redirect_to('/');
+});
 
 # web
-group {
-  under sub {
-    my $c = shift;
-    return 1 if $c->session('username');
-    $c->redirect_to('login');
-    return 0;
-  };
+my $web = $r->under(sub {
+  my $c = shift;
+  return 1 if $c->session('username');
+  $c->redirect_to('login');
+  return 0;
+});
 
-  get '/' => 'dashboard';
-  get '/map' => 'map';
-};
+$web->get('/' => 'dashboard');
+$web->get('/map' => 'map');
 
 # api
 
-under '/api' => sub {
-  my $c = shift;
-  my $user;
-  if (my $username = $c->session->{username}) {
-    $user = $c->get_user($username);
-  } else {
-    my $url = $c->req->url->to_abs;
-    $user = $c->authenticate($url->username, $url->password);
+my $api = $r->under(
+  '/api' => sub {
+    my $c = shift;
+    my $user;
+    if (my $username = $c->session->{username}) {
+      $user = $c->get_user($username);
+    } else {
+      my $url = $c->req->url->to_abs;
+      $user = $c->authenticate($url->username, $url->password);
+    }
+
+    unless ($user) {
+      $c->render(json => {error => 'Not Authorized'}, status => 400);
+      return 0;
+    }
+
+    delete $user->{password};
+    $c->stash(user => $user);
+    return 1;
   }
+);
 
-  unless ($user) {
-    $c->render(json => {error => 'Not Authorized'}, status => 400);
-    return 0;
-  }
-
-  delete $user->{password};
-  $c->stash(user => $user);
-  return 1;
-};
-
-post '/' => sub {
+$api->post('/' => sub {
   my $c = shift;
   my $user = $c->stash->{user};
   if (my $json = $c->req->json || {}) {
@@ -136,12 +137,12 @@ post '/' => sub {
     SQL
   }
   $c->render(json => []);
-};
+});
 
-get '/user' => sub {
+$api->get('/user' => sub {
   my $c = shift;
   $c->render(json => $c->stash->{user});
-};
+});
 
 app->start;
 
