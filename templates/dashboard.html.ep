@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Dashboard</title>
+
+    %= stylesheet 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css'
+  </head>
+  <body>
+    <div class="container">
+      <div id="app">
+        <track-dashboard :username="username"></track-dashboard>
+      </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.js"></script>
+
+    <template id="track-dashboard-template">
+      <div class="dashboard">
+        <div>Hi {{ user.name }}</div>
+        <div><a href="/map">Map</a></div>
+      <div>
+    </template>
+
+    <script>
+      Vue.config.devtools = true;
+
+      Vue.component('track-dashboard', {
+        template: '#track-dashboard-template',
+        props: {
+          username: {
+            type: String,
+            required: true,
+          },
+        },
+        data: function() {
+          return {
+            user: {},
+          };
+        },
+        created: function() {
+          var self = this;
+          $.get('/api/user/', function(data) { self.user = data });
+        },
+      });
+
+      var vm = new Vue({
+        el: '#app',
+        data: {
+          username: '<%== session 'username' %>',
+        },
+      });
+    </script>
+  </body>
+</html>
+

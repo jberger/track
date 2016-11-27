@@ -37,7 +37,7 @@ helper get_user => sub {
   my $opts = ref $_[-1] ? pop : {};
   return undef
     unless my $username = shift || $c->session('username');
-  my $cols = 'id, name, username, password';
+  my $cols = 'id, name, username';
   $cols .= ', face' if $opts->{face};
   $c->pg->db->query("select $cols from users where username=?", $username)->hash;
 };
@@ -99,20 +99,34 @@ group {
     return 0;
   };
 
-  get '/' => 'map';
+  get '/' => 'dashboard';
+  get '/map' => 'map';
 };
 
 # api
 
 under '/api' => sub {
+  my $c = shift;
+  my $user;
+  if (my $username = $c->session->{username}) {
+    $user = $c->get_user($username);
+  } else {
+    my $url = $c->req->url->to_abs;
+    $user = $c->authenticate($url->username, $url->password);
+  }
+
+  unless ($user) {
+    $c->render(json => {error => 'Not Authorized'}, status => 400);
+    return 0;
+  }
+
+  $c->stash(user => $user);
   return 1;
 };
 
 post '/' => sub {
   my $c = shift;
-  my $url = $c->req->url->to_abs;
-  return $c->render(json => {error => 'Not Authorized'}, status => 400)
-    unless my $user = $c->authenticate($url->username, $url->password);
+  my $user = $c->stash->{user};
   if (my $json = $c->req->json || {}) {
     $c->pg->db->query(<<'    SQL', $user->{id}, @{$json}{qw/_type tst/}, {json => $json});
       insert into data (user_id, type, sent, data)
@@ -122,6 +136,10 @@ post '/' => sub {
   $c->render(json => []);
 };
 
+get '/user' => sub {
+  my $c = shift;
+  $c->render(json => $c->stash->{user});
+};
 
 app->start;
 
