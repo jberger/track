@@ -1,3 +1,5 @@
+%= depends 'components/user-card'
+
 <template id="track-dashboard-template">
   <div class="dashboard">
     <track-user-card :user="user"></track-user-card>

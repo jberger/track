@@ -1,3 +1,5 @@
+%= depends 'components/battery-indicator'
+
 <template id="track-user-card-template">
   <div class="media track-user">
     <div class="media-left media-middle">

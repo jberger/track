@@ -22,6 +22,12 @@ helper pg => sub {
 
 helper migrate => sub { shift->pg->migrations->migrate(@_ ? shift : ()) };
 
+helper depends => sub {
+  my ($c, $template) = @_;
+  return if $c->stash->{'track.depends'}{$template}++;
+  return $c->include($template);
+};
+
 helper add_user => sub {
   my ($c, $full, $user, $pass) = @_;
   my $enc = $c->bcrypt($pass);
