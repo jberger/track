@@ -37,7 +37,7 @@ helper get_user => sub {
   my $opts = ref $_[-1] ? pop : {};
   return undef
     unless my $username = shift || $c->session('username');
-  my $cols = 'id, name, username';
+  my $cols = 'id, name, username, password';
   $cols .= ', face' if $opts->{face};
   $c->pg->db->query("select $cols from users where username=?", $username)->hash;
 };
@@ -59,6 +59,7 @@ helper get_user_location => sub {
 helper authenticate => sub {
   my ($c, $username, $password, $opts) = @_;
   return undef unless my $user = $c->get_user($username, $opts);
+  return undef unless $user->{password};
   return undef unless $c->bcrypt_validate($password, $user->{password});
   return $user;
 };
