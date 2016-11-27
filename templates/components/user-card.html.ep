@@ -7,11 +7,14 @@
     </div>
     <div class="media-body">
       <h4 class="media-heading">{{ user.name }}</h4>
-      View on <a href="/map">map</a>
+      Located at {{ user.location.lat }}, {{user.location.lon }}
     </div>
     <div class="media-right media-middle">
-      <track-battery-indicator v-if="user.location" :level="user.location.batt"></track-battery-indicator>
-    </div>
+      <span>
+        <track-battery-indicator v-if="user.location" :level="user.location.batt"></track-battery-indicator>
+        <a href="/map"><i class="fa fa-globe"></i></a>
+      </div>
+    </span>
   <div>
 </template>
 
