@@ -1,5 +1,6 @@
 use Mojolicious::Lite;
 
+use lib 'lib';
 use Mojo::Pg;
 
 plugin Config => {
@@ -11,6 +12,7 @@ plugin Config => {
 
 plugin 'ACME';
 plugin 'Bcrypt';
+plugin 'Track::Plugin::Model';
 
 helper pg => sub {
   my $c = shift;
@@ -38,36 +40,11 @@ helper add_user => sub {
   SQL
 };
 
-helper get_user => sub {
-  my $c = shift;
-  my $opts = ref $_[-1] ? pop : {};
-  return undef
-    unless my $username = shift || $c->session('username');
-  my $cols = 'id, name, username, password';
-  $cols .= ', face' if $opts->{face};
-  $c->pg->db->query("select $cols from users where username=?", $username)->hash;
-};
-
-helper get_user_location => sub {
-  my $c = shift;
-  return undef
-    unless my $user = shift || $c->get_user;
-  my $sql = <<'  SQL';
-    select data
-    from data
-    where user_id=?
-    order by sent desc
-    limit 1
-  SQL
-  ($c->pg->db->query($sql, $user->{id})->expand->hash || {})->{data};
-};
-
 helper authenticate => sub {
   my ($c, $username, $password, $opts) = @_;
-  return undef unless my $user = $c->get_user($username, $opts);
-  return undef unless $user->{password};
-  return undef unless $c->bcrypt_validate($password, $user->{password});
-  return $user;
+  return undef unless my $found = $c->model->user->get_password($username);
+  return undef unless $c->bcrypt_validate($password, $found);
+  return 1;
 };
 
 helper path => sub {
@@ -93,12 +70,13 @@ $r->any([qw/GET POST/] => '/login' => sub {
   my $c = shift;
   my $username = $c->param('username');
   return $c->render('login') if $c->req->method eq 'GET' || !$username;
-  return $c->render('login') unless my $user = $c->authenticate($username, $c->param('password'));
+  return $c->render('login') unless $c->authenticate($username, $c->param('password'));
   $c->session(username => $username);
   $c->redirect_to('/');
 });
 
 # web
+
 my $web = $r->under(sub {
   my $c = shift;
   return 1 if $c->session('username');
@@ -114,13 +92,16 @@ $web->get('/map' => 'map');
 my $api = $r->under(
   '/api' => sub {
     my $c = shift;
-    my $user;
-    if (my $username = $c->session->{username}) {
-      $user = $c->get_user($username);
+    my ($username, $valid);
+    if ($c->session->{username}) {
+      $username = $c->session->{username};
+      $valid = 1;
     } else {
       my $url = $c->req->url->to_abs;
-      $user = $c->authenticate($url->username, $url->password);
+      $valid = $c->authenticate($url->username, $url->password);
+      $username = $url->username if $valid;
     }
+    my $user = $valid ? $c->model->user->get_one({username => $username}) : undef;
 
     unless ($user) {
       $c->render(json => {error => 'Not Authorized'}, status => 400);
@@ -148,7 +129,6 @@ $api->post('/' => sub {
 $api->get('/user' => sub {
   my $c = shift;
   my $user = $c->stash->{user};
-  $user->{location} = $c->get_user_location($user);
   $c->render(json => $user);
 });
 

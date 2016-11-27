@@ -19,9 +19,9 @@
     <div id="map"></div>
     <script>
       var map;
-      % my $user = get_user;
+      % my $user = stash 'user';
       var user = <%== Mojo::JSON::to_json $user %>;
-      var loc = <%== Mojo::JSON::to_json get_user_location $user %>;
+      var loc = user.location;
       var path = <%== Mojo::JSON::to_json path $user %>;
       var myLatLng = {lat: loc.lat, lng: loc.lon};
       var markers = [];
