@@ -141,7 +141,9 @@ $api->post('/' => sub {
 
 $api->get('/user' => sub {
   my $c = shift;
-  $c->render(json => $c->stash->{user});
+  my $user = $c->stash->{user};
+  $user->{location} = $c->get_user_location($user);
+  $c->render(json => $user);
 });
 
 app->start;

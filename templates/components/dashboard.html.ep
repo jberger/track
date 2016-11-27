@@ -1,0 +1,27 @@
+<template id="track-dashboard-template">
+  <div class="dashboard">
+    <track-user-card :user="user"></track-user-card>
+  </div>
+</template>
+
+<script>
+  Vue.component('track-dashboard', {
+    template: '#track-dashboard-template',
+    props: {
+      username: {
+        type: String,
+        required: true,
+      },
+    },
+    data: function() {
+      return {
+        user: {},
+      };
+    },
+    created: function() {
+      var self = this;
+      $.get('/api/user/', function(data) { self.user = data });
+    },
+  });
+</script>
+

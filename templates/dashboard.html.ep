@@ -8,9 +8,17 @@
     <title>Dashboard</title>
 
     %= stylesheet 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css'
+    %= stylesheet 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'
     <style>
       .track-user img.track-face {
-        min-width: 50px;
+        width: 40px;
+      }
+      .track-user {
+        width: 200px;
+        border-style: solid;
+        border-width: 1px;
+        padding: 2px;
+        border-radius: 5px;
       }
     </style>
   </head>
@@ -24,57 +32,13 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.js"></script>
+    <script>Vue.config.devtools = true;</script>
 
-    <template id="track-user-card-template">
-      <div class="media track-user">
-        <div class="media-left">
-          <img v-if="! user.face" class="media-object track-face" src="default_face.svg">
-        </div>
-        <div class="media-body">
-          <h4 class="media-heading">{{ user.name }}</h4>
-          View on <a href="/map">map</a>
-        </div>
-      <div>
-    </template>
-
-    <template id="track-dashboard-template">
-      <div class="dashboard">
-        <track-user-card :user="user"></track-user-card>
-      </div>
-    </template>
+    %= include 'components/battery-indicator'
+    %= include 'components/user-card'
+    %= include 'components/dashboard'
 
     <script>
-      Vue.config.devtools = true;
-
-      Vue.component('track-user-card', {
-        template: '#track-user-card-template',
-        props: {
-          user: {
-            type: Object,
-            required: 1,
-          },
-        },
-      });
-
-      Vue.component('track-dashboard', {
-        template: '#track-dashboard-template',
-        props: {
-          username: {
-            type: String,
-            required: true,
-          },
-        },
-        data: function() {
-          return {
-            user: {},
-          };
-        },
-        created: function() {
-          var self = this;
-          $.get('/api/user/', function(data) { self.user = data });
-        },
-      });
-
       var vm = new Vue({
         el: '#app',
         data: {

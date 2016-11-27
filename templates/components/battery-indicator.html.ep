@@ -1,0 +1,29 @@
+<template id="track-battery-indicator-template">
+  <i class="battery fa" :class="classes" :title="title"></i>
+</template>
+
+<script>
+  Vue.component('track-battery-indicator', {
+    template: '#track-battery-indicator-template',
+    props: {
+      level: {
+        type: Number,
+        required: true,
+      },
+    },
+    computed: {
+      classes: function() {
+        if (this.level > 85) return ['fa-battery-full'];
+        if (this.level > 60) return ['fa-battery-three-quarters'];
+        if (this.level > 35) return ['fa-battery-half'];
+        if (this.level > 15) return ['fa-battery-quarter'];
+        if (this.level > 5)  return ['fa-battery-quarter', 'text-danger'];
+        return ['fa-battery-empty', 'text-danger'];
+      },
+      title: function() {
+        return this.level + '%';
+      },
+    },
+  });
+</script>
+

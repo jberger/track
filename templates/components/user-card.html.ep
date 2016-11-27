@@ -1,0 +1,26 @@
+<template id="track-user-card-template">
+  <div class="media track-user">
+    <div class="media-left media-middle">
+      <img v-if="! user.face" class="media-object track-face" src="default_face.svg">
+    </div>
+    <div class="media-body">
+      <h4 class="media-heading">{{ user.name }}</h4>
+      View on <a href="/map">map</a>
+    </div>
+    <div class="media-right media-middle">
+      <track-battery-indicator v-if="user.location" :level="user.location.batt"></track-battery-indicator>
+    </div>
+  <div>
+</template>
+
+<script>
+  Vue.component('track-user-card', {
+    template: '#track-user-card-template',
+    props: {
+      user: {
+        type: Object,
+        required: true,
+      },
+    },
+  });
+</script>
