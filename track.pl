@@ -121,6 +121,7 @@ under '/api' => sub {
     return 0;
   }
 
+  delete $user->{password};
   $c->stash(user => $user);
   return 1;
 };
