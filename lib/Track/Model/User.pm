@@ -2,6 +2,8 @@ package Track::Model::User;
 
 use Mojo::Base -base;
 
+use Mojo::JSON;
+
 has pg => sub { die 'pg instance is required' };
 
 sub get_one {
@@ -34,6 +36,19 @@ sub get_one {
   $sql .= ' where ' . join(' and ', @where) if @where;
 
   $self->pg->db->query($sql, @args)->expand->hash;
+}
+
+sub update_location {
+  my ($self, $user, $location) = @_;
+
+  my @args = ($user->{id}, @{$location}{qw/_type tst/}, {json => $location});
+  my $success = !!$self->pg->db->query(<<'  SQL', @args)->rows;
+    insert into data (user_id, type, sent, data)
+    values (?, ?, to_timestamp(?), ?)
+  SQL
+  $user->{location} = $location;
+  $self->pg->pubsub->notify("users.$user->{username}", Mojo::JSON::encode_json $user);
+  return $success;
 }
 
 sub get_password {
