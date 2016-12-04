@@ -58,5 +58,24 @@ sub get_password {
   return $res->{password};
 }
 
+sub get_path {
+  my ($c, $user) = @_;
+  my $sql = <<'  SQL';
+    select json_agg(row_to_json(t)) as path
+    from (
+      select
+        (data->>'lat')::numeric as lat,
+        (data->>'lon')::numeric as lng
+      from data
+      where
+        user_id=?
+        and type='location'
+      order by sent
+    ) t;
+  SQL
+  return $c->pg->db->query($sql, $user->{id})->expand->hash->{path};
+}
+
+
 1;
 
