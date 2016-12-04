@@ -19,7 +19,7 @@
     <div id="map"></div>
     <script>
       var map;
-      % my $user = stash 'user';
+      % my $user = $c->model->user->get_one({username => session 'username'});
       var user = <%== Mojo::JSON::to_json $user %>;
       var loc = user.location;
       var path = <%== Mojo::JSON::to_json path $user %>;

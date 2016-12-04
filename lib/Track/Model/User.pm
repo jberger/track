@@ -21,7 +21,7 @@ sub get_one {
       id,
       name,
       username,
-      face is not null as has_face,
+      to_json(face is not null) as has_face,
       (
         select data
         from data
