@@ -17,6 +17,8 @@
   </head>
   <body>
     <div id="map"></div>
+    %= javascript 'websocket_multiplex.js'
+
     <script>
       var map;
       % my $user = $c->model->user->get_one({username => session 'username'});
@@ -66,6 +68,15 @@
         addMarker(myLatLng, loc.tid);
         fitBounds(markers);
       }
+
+      var ws = new WebSocket('<%= url_for('multiplex')->to_abs %>');
+      var multiplex = new WebSocketMultiplex(ws);
+      var user = multiplex.channel('users.' + user.username);
+      user.onmessage = function(e){
+        var data = JSON.parse(e.data);
+        var loc = data.location;
+        markers[0].setPosition({lat: loc.lat, lng: loc.lon});
+      };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.1/lodash.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=<%== $c->app->config->{google_api_key}  %>&callback=initMap"

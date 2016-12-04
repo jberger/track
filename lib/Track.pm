@@ -2,6 +2,7 @@ package Track;
 
 use Mojo::Base 'Mojolicious';
 
+use Mojo::JSON;
 use Mojo::Pg;
 
 sub startup {
@@ -16,6 +17,7 @@ sub startup {
 
   $app->plugin('ACME');
   $app->plugin('Bcrypt');
+  $app->plugin('Multiplex');
   $app->plugin('Track::Plugin::Model');
 
   $app->helper(pg => sub {
@@ -130,7 +132,10 @@ sub startup {
         insert into data (user_id, type, sent, data)
         values (?, ?, to_timestamp(?), ?)
       SQL
+      $user->{location} = $json;
+      $c->pg->pubsub->notify("users.$user->{username}", Mojo::JSON::encode_json $user);
     }
+
     $c->render(json => []);
   });
 
@@ -139,6 +144,8 @@ sub startup {
     my $user = $c->stash->{user};
     $c->render(json => $user);
   });
+
+  $api->websocket('/multiplex')->to('WebSocket#socket')->name('multiplex');
 
 }
 
