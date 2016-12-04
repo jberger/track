@@ -26,7 +26,11 @@ sub startup {
     return $pg;
   });
 
-  $app->helper(migrate => sub { shift->pg->migrations->migrate(@_ ? shift : ()) });
+  $app->helper(migrate => sub {
+    my $m = shift->pg->migrations;
+    $m->name('track')->from_file('track.sql');
+    $m->migrate(@_ ? shift : ());
+  });
 
   $app->helper(depends => sub {
     my ($c, $template) = @_;
@@ -95,30 +99,28 @@ sub startup {
 
   # api
 
-  my $api = $r->under(
-    '/api' => sub {
-      my $c = shift;
-      my ($username, $valid);
-      if ($c->session->{username}) {
-        $username = $c->session->{username};
-        $valid = 1;
-      } else {
-        my $url = $c->req->url->to_abs;
-        $valid = $c->authenticate($url->username, $url->password);
-        $username = $url->username if $valid;
-      }
-      my $user = $valid ? $c->model->user->get_one({username => $username}) : undef;
-
-      unless ($user) {
-        $c->render(json => {error => 'Not Authorized'}, status => 400);
-        return 0;
-      }
-
-      delete $user->{password};
-      $c->stash(user => $user);
-      return 1;
+  my $api = $r->under('/api' => sub {
+    my $c = shift;
+    my ($username, $valid);
+    if ($c->session->{username}) {
+      $username = $c->session->{username};
+      $valid = 1;
+    } else {
+      my $url = $c->req->url->to_abs;
+      $valid = $c->authenticate($url->username, $url->password);
+      $username = $url->username if $valid;
     }
-  );
+    my $user = $valid ? $c->model->user->get_one({username => $username}) : undef;
+
+    unless ($user) {
+      $c->render(json => {error => 'Not Authorized'}, status => 400);
+      return 0;
+    }
+
+    delete $user->{password};
+    $c->stash(user => $user);
+    return 1;
+  });
 
   $api->post('/' => sub {
     my $c = shift;

@@ -22,7 +22,7 @@
       % my $user = $c->model->user->get_one({username => session 'username'});
       var user = <%== Mojo::JSON::to_json $user %>;
       var loc = user.location;
-      var path = <%== Mojo::JSON::to_json path $user %>;
+      %# var path = <%== Mojo::JSON::to_json path $user %>;
       var myLatLng = {lat: loc.lat, lng: loc.lon};
       var markers = [];
 
