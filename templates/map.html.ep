@@ -21,13 +21,9 @@
 
     <script>
       var map;
-      % my $model = $c->model->user;
-      % my $user = $model->get_one({username => session 'username'});
-      var user = <%== Mojo::JSON::to_json $user %>;
-      var loc = user.location;
-      %# var path = <%== Mojo::JSON::to_json($model->get_path($user)) %>;
-      var myLatLng = {lat: loc.lat, lng: loc.lon};
-      var markers = [];
+      var username = '<%== session 'username' %>';
+      var markers = {};
+      var channels = {};
 
       function addPath(path) {
         var pathLine = new google.maps.Polyline({
@@ -42,15 +38,29 @@
         fitBounds(path);
       }
 
-      function addMarker(pos, title) {
+      function updateMarker(user) {
         if (!map) return;
-        var marker = new google.maps.Marker({
-          map: map,
-          position: pos,
-          label: title,
-          'title': title,
-        });
-        markers.push(marker);
+        if (!user) return;
+
+        var loc = user.location;
+        var pos = {lat: loc.lat, lng: loc.lon}
+
+        var marker;
+        if (_.has(markers, user.username)) {
+          marker = markers[user.username];
+          marker.setPosition(pos);
+        } else {
+          var title = _.toUpper(loc.tid);
+          marker = new google.maps.Marker({
+            map: map,
+            position: pos,
+            label: title,
+            'title': title,
+          });
+          markers[user.username] = marker;
+        }
+
+        fitBounds(_.values(markers));
         return marker;
       }
 
@@ -65,18 +75,17 @@
 
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {});
-
-        addMarker(myLatLng, loc.tid);
-        fitBounds(markers);
+        fetch('/api/user', {credentials: 'include'})
+          .then(function(response) { return response.json() })
+          .then(function(user) { updateMarker(user) });
       }
 
       var ws = new WebSocket('<%= url_for('multiplex')->to_abs %>');
       var multiplex = new WebSocketMultiplex(ws);
-      var user = multiplex.channel('users.' + user.username);
-      user.onmessage = function(e){
-        var data = JSON.parse(e.data);
-        var loc = data.location;
-        markers[0].setPosition({lat: loc.lat, lng: loc.lon});
+      channels[username] = multiplex.channel('users.' + username);
+      channels[username].onmessage = function(e){
+        var user = JSON.parse(e.data);
+        updateMarker(user);
       };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.16.1/lodash.min.js"></script>
