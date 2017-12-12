@@ -16,7 +16,6 @@ sub startup {
 
   if (my $s = $app->config->{secrets}) { $app->secrets($s) }
 
-  $app->plugin('ACME');
   $app->plugin('Bcrypt');
   $app->plugin('Multiplex');
   $app->plugin('Track::Plugin::Model');
